@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-# define backbone block
 class Model(nn.Module):
 
     def __init__(self):

@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.io import savemat
 from network import Model
 from dataset import MyDataset
@@ -23,6 +24,14 @@ if shuffle_dataset :
     np.random.shuffle(indices)
 val_indices = indices[:split]
 
+# check if dataset load order is correct
+# for ind in val_indices:
+#     print(ind)
+#     img, _ = my_dataset[ind]
+#     plt.figure()
+#     plt.imshow(img.permute(1,2,0))
+#     plt.show()
+
 # load model
 model = Model().to(device=device)
 model.load_state_dict(torch.load('model_saved.pth'))
@@ -31,6 +40,7 @@ model.eval()
 
 for ind in val_indices:
     img, _ = my_dataset[ind]
+    img = img.unsqueeze(dim=0)
     position_map = model(img)
     
     position_map = position_map.squeeze()           # must be (128,128)
