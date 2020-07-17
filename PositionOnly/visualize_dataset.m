@@ -1,5 +1,5 @@
 % This script gets an image and 2 sets of coords then scatter plots points
-% on the image along with a circle showing the direction
+% on the image along with a circle sector showing the direction
 
 clc
 clear
@@ -10,7 +10,7 @@ im = imread(['Image/', num2str(num_data, '%06.f'),'.png']);
 % read json files (target points and their label)
 fname = ['Point_Location/', num2str(num_data, '%06.f'),'.json'];
 val = jsondecode(fileread(fname));
-target_points = [200-val.Y, val.X];
+target_points = [size(im,1)-val.Y, val.X];
 
 fname = ['Coarse_Label/', num2str(num_data, '%06.f'),'.json'];
 val = jsondecode(fileread(fname));
@@ -33,8 +33,8 @@ for i=1:size(target_points,1)
         alpha = linspace(angles(j)-22.5, angles(j), 100); 
         origin = [target_points(i,1), target_points(i,2)];
     %     zer = zeros()
-        patch([origin(2)  origin(2)+5*cosd(alpha) origin(2)],...
-              [origin(1) origin(1)-5*sind(alpha) origin(1)],...
+        patch([origin(2)  origin(2)+3*cosd(alpha) origin(2)],...
+              [origin(1) origin(1)-3*sind(alpha) origin(1)],...
               'r','FaceAlpha',.5)
     end
 end
