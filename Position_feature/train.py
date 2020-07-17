@@ -2,6 +2,7 @@
 This script aims at training the model
 '''
 
+
 import torch
 import torchvision
 import torch.nn as nn
@@ -12,6 +13,7 @@ from network import Model
 from dataset import MyDataset
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+# print(device)
 
 # loss function
 def loss_descriptor(estimation, target):
@@ -30,7 +32,7 @@ num_epochs = 1
 my_dataset = MyDataset('.')
 
 # Define data loader  #TODO: Can be replaced with random_split
-batch_size = 10
+batch_size = 8
 validation_split = .3
 shuffle_dataset = True
 random_seed= 42
@@ -38,9 +40,11 @@ random_seed= 42
 dataset_size = len(my_dataset)
 indices = list(range(dataset_size))
 split = int(np.floor(validation_split * dataset_size))
+
 if shuffle_dataset :
     np.random.seed(random_seed)
     np.random.shuffle(indices)
+
 train_indices, val_indices = indices[split:], indices[:split]
 # Creating data samplers and loaders:
 train_sampler = SubsetRandomSampler(train_indices)
@@ -55,34 +59,51 @@ validation_loader = torch.utils.data.DataLoader(my_dataset,
 
 
 # model, loss, and optimizer settings
-model = Model().to(device=device)
+model = Model()
+model.to(device=device)
 # print(model)
+
 # TODO: find a proper loss e.g., BCEWithLogitLoss
 loss_position = nn.BCELoss() 
-optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+optimizer = torch.optim.Adam(model.parameters(), 
+                             lr=0.001, 
+                             betas=(0.9, 0.999), 
+                             eps=1e-08, 
+                             weight_decay=0.001, 
+                             amsgrad=False)
 
 # training
 # print(model.state_dict())
-# model = model.float()
-training_losses = []
-validation_losses = []
+model = model.float()
 
 for epoch in range(num_epochs):
-    # train
-    for _, (img, position_target, feature_target) in enumerate(train_loader):
-        model.train()
-        optimizer.zero_grad()
 
-        position_map, feature_maps = model(img)
+    # Train
+    model.train()
 
-        # loss calculation
+    # Sum of losses from this epoch
+    epoch_loss = 0
+
+    for _, data in enumerate(train_loader):
+        
+        # Load data to tensors
+        img = data['image']
+        position_target = data['point_map']
+        feature_target = data['feature_map']
+        img = img.to(device=device, dtype=torch.float32)
+        position_target = position_target.to(device=device)
+        feature_target = feature_target.to(device=device)
+
+        # Calculate Loss
+        position_map, feature_map = model(img)
         loss_pos = loss_position(position_map, position_target)
-        loss_desc = loss_descriptor(feature_maps, feature_target)
+        loss_desc = loss_descriptor(feature_map, feature_target)
         #FIXME: Can add some weights or other aggregation method
         loss = loss_pos + loss_desc   
-        training_losses.append(loss)
+        epoch_loss += loss.item()
 
-        # backpropagate and update optimizer learning rate
+        # Backpropagate and update optimizer learning rate
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
@@ -96,22 +117,32 @@ for epoch in range(num_epochs):
         #             os.remove(f)
 
 
-        # print statistics
-        print(f"epoch:[%.d] Training loss: %.3f" %(epoch+1, loss))
+    # print statistics
+    print(f"epoch:[%.d] Training loss: %.3f" %(epoch+1, loss))
     
     # Evaluate perfomance on validation periodically
     # validation every 1 epochs
     if (epoch+1) % 1 == 0:
         validation_loss = 0.0
         num_batch = 0
-        for _, (img, position_target, feature_target) in enumerate(validation_loader):
-            model.eval() 
-            position_map, feature_maps = model(img)
+        for _, data in enumerate(validation_loader):
+            model.eval()
+
+            img = data['image']
+            position_target = data['point_map']
+            feature_target = data['feature_map']
+            img = img.to(device=device)
+            position_target = position_target.to(device=device, 
+                                                 dtype=torch.float32)
+            feature_target = feature_target.to(device=device, 
+                                                 dtype=torch.float32)
+            position_map, feature_map = model(img)
+
+
             # loss calculation
             loss_pos = loss_position(position_map, position_target)
-            loss_desc = loss_descriptor(feature_maps, feature_target)
-            loss = loss_pos + loss_desc   
-            validation_losses.append(loss)
+            loss_desc = loss_descriptor(feature_map, feature_target)
+            loss = loss_pos + loss_desc
             validation_loss += loss.item()
             num_batch += 1 
         
