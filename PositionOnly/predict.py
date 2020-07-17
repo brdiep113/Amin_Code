@@ -50,5 +50,5 @@ for ind in val_indices:
     position_map = position_map.detach().cpu().numpy()
         
     mdic = {'position_map': position_map}
-    savemat(f"results/%.d.mat"%(ind), mdic)
+    savemat(f"results/%.06d.mat"%(ind), mdic)
 

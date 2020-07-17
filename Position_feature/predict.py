@@ -41,5 +41,5 @@ for ind in val_indices:
     feature_maps = feature_maps.detach().numpy()
 
     mdic = {'position_map': position_map, 'feature_maps': feature_maps}
-    savemat(f"results/%.d.mat"%(ind), mdic)
+    savemat(f"results/%.06d.mat"%(ind), mdic)
 
