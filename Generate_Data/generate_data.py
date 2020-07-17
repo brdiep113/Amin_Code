@@ -1,6 +1,6 @@
-from Generate_Data.utils.plot_functions import fill_scene, plot_sample_img, plot_ground_truth
-from Generate_Data.utils.clean_training import clean_json_labels, clean_json_points
-from Generate_Data.Structure.Scene import Scene
+from utils.plot_functions import fill_scene, plot_sample_img, plot_ground_truth
+from utils.clean_training import clean_json_labels, clean_json_points
+from Structure.Scene import Scene
 import json
 
 # path_to_training_images = 'E:\Amin_Codes\Synthesized_Data\Dataset_Sample\Image'
