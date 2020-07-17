@@ -62,10 +62,10 @@ def fill_scene(max_shape_count: int, scene: Scene, json) -> None:
     failed = 0
 
     while failed < 10 and generated < max_shape_count:
-        x = random.uniform(40, 160)
-        y = random.uniform(40, 160)
-        w = random.uniform(15, 35)
-        h = random.uniform(15, 35)
+        x = random.uniform(32, 96)
+        y = random.uniform(32, 96)
+        w = random.uniform(10, 20)
+        h = random.uniform(10, 20)
         angle = random.uniform(0, 360)
         shape = Building(x, y, w, h, angle, generated)
         offset = np.array((random.uniform(0, w / 8), random.uniform(0, h / 8)))
