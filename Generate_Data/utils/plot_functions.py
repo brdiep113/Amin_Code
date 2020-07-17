@@ -4,8 +4,8 @@ import random
 import math
 import io
 from os import path
-from Generate_Data.Structure.Building import Building
-from Generate_Data.Structure.Scene import Scene
+from Structure.Building import Building
+from Structure.Scene import Scene
 from PIL import Image
 import csv
 
