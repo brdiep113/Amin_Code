@@ -1,5 +1,5 @@
 '''
-Builds up the structure of the network inspired by Unsuperpoint 
+Builds up the structure of the network inspired by Unsuperpoint
 https://arxiv.org/pdf/1907.04011.pdf
 '''
 
@@ -13,7 +13,7 @@ class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
         # four pairs of convolution layers
-        self.conv1 = nn.Conv2d(3, 32, 3, 1, 1)   # if having R, 4 input channels
+        self.conv1 = nn.Conv2d(3, 32, 3, 1, 1)  # if having R, 4 input channels
         self.conv2 = nn.Conv2d(32, 32, 3, 1, 1)
         self.bn1 = nn.BatchNorm2d(32)
 
@@ -32,14 +32,14 @@ class Model(nn.Module):
         self.conv9 = nn.Conv2d(256, 256, 3, 1, 1)
         self.bn5 = nn.BatchNorm2d(256)
 
-        self.conv10 = nn.Conv2d(256, 8*8, 3, 1, 1)  # 8 = downsapling scale
+        self.conv10 = nn.Conv2d(256, 8 * 8, 3, 1, 1)  # 8 = downsapling scale
         self.bn6 = nn.BatchNorm2d(64)
         self.pixel_shuffle = nn.PixelShuffle(8)
 
     def forward(self, x):
         x = F.leaky_relu(self.bn1(self.conv1(x)))
         x = F.leaky_relu(F.max_pool2d(self.bn1(self.conv2(x)), 2, stride=2))
-        
+
         x = F.leaky_relu(self.bn2(self.conv3(x)))
         x = F.leaky_relu(F.max_pool2d(self.bn2(self.conv4(x)), 2, stride=2))
 
@@ -58,4 +58,3 @@ class Model(nn.Module):
 
 
 
-        
