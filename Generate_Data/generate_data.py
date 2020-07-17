@@ -28,7 +28,7 @@ testing_json = []
 
 noise = False
 
-training_sample_size = 1000
+training_sample_size = 100
 testing_sample_size = training_sample_size // 10
 
 scene_size = (128, 128)
