@@ -10,7 +10,7 @@ num_result = 18;
 % read image
 im = imread(['Image/', num2str(num_result,'%06.f') ,'.png']);
 % read results in mat files (predicted points)
-load(['results/', num2str(num_result) ,'.mat']);
+load(['results/', num2str(num_result,'%06.f') ,'.mat']);
 
 %  postition
 p = position_map > 0.5; % for now, cause the results are not limited to 0|1
