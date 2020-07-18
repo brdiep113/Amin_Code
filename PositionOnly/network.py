@@ -50,7 +50,7 @@ class Model(nn.Module):
         x = F.leaky_relu(self.bn4(self.conv8(x)))
 
         x = F.leaky_relu(self.bn5(self.conv9(x)))
-        x = F.sigmoid(self.bn6(self.conv10(x)))  # also we can use softmax
+        x = torch.sigmoid(self.bn6(self.conv10(x)))  # also we can use softmax
         # reshape
         x = self.pixel_shuffle(x)
 
