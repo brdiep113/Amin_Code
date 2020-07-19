@@ -63,6 +63,7 @@ class MyDataset(Dataset):
             # Transform image to tensor, change data type
             img_tensor = torch.from_numpy(img_as_np).float()
             img_tensor = img_tensor.permute(2, 0, 1)
+        img.close()
 
         # get point path from the point list
         single_point_path = self.point_list[index]
@@ -77,6 +78,7 @@ class MyDataset(Dataset):
             point_map = generate_heatmap(points)
             # convert to tensor, change data type
             point_map_tensor = torch.from_numpy(point_map).float()
+        json_file.close()
 
             # get feature path from the point list
         single_feature_path = self.feature_list[index]
@@ -90,6 +92,7 @@ class MyDataset(Dataset):
             # convert to tensor, change data type
             feature_map_tensor = torch.from_numpy(feature_map).float()
             # TODO: for labels (point_map & feature_map) int dtype might be better
+        json_file.close()
 
         # Transform image to tensor
         if self.transforms:
@@ -98,7 +101,9 @@ class MyDataset(Dataset):
             feature_map_tensor = self.transforms(feature_map_tensor)
 
         # Return image and the label
-        return (img_tensor, point_map_tensor, feature_map_tensor)
+        return {'image': img_tensor, 
+                'point_map': point_map_tensor,
+                'feature_map': feature_map_tensor}
 
     def __len__(self):
         return self.dataset_length
