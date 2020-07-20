@@ -124,6 +124,7 @@ torch.save(model.state_dict(), 'model_saved.pth')
 # Plot loss Evolution
 plt.plot(loss_train, label='training loss')
 plt.plot(loss_val, label='validation loss')
+plt.yscale('log')
 plt.xlabel('epoch')
 plt.ylabel('Loss')
 plt.legend()
