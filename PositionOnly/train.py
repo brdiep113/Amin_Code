@@ -31,7 +31,7 @@ my_dataset = MyDataset('.')
 batch_size = 32
 validation_split = .1
 shuffle_dataset = True
-random_seed= 42
+random_seed = 42
 
 # Creating data indices for training and validation splits:
 dataset_size = len(my_dataset)
@@ -132,12 +132,16 @@ for epoch in range(num_epochs):
         print(f"epoch:[%.d] Validation loss: %.5f" %(epoch+1, loss_val[-1]))
 
 # Save the model
-torch.save(model.state_dict(), 'model_saved.pth')
+torch.save(model.state_dict(), 'stats/model_saved.pth')
 
-# Save latent space feature maps
+# Save latent space feature maps along with some log statistics
 latent = latent[1:,...]            # removes first, which was an torch.empty
-mdic = {'latent' : latent}
-savemat("latent.mat", mdic)
+loss_train = np.array(loss_train)
+loss_val = np.array(loss_val)
+mdic = {'latent' : latent, 'loss_train' : loss_train, 'loss_val' : loss_val,
+        'batch_size' : batch_size, 'validation_split' : validation_split,
+        'dataset_size' : dataset_size, 'random_seed' : random_seed}
+savemat("stats/log.mat", mdic)
 
 # Plot loss Evolution
 plt.plot(loss_train, label='training loss')
@@ -146,4 +150,5 @@ plt.yscale('log')
 plt.xlabel('epoch')
 plt.ylabel('Loss')
 plt.legend()
+plt.savefig('stats/loss_evolution.png', bbox_inches='tight')
 plt.show()
