@@ -40,7 +40,6 @@ class MyDataset(Dataset):
         # get image name from the image list
         single_image_path = self.image_list[index]
         # Open image (as a PIL.Image object) & must be converted to tensor
-        # TODO: replace Image with skimage
         with Image.open(single_image_path).convert('RGB') as img:
             # convert to numpy, dim = 128x128
             img_as_np = np.array(img) / 255
