@@ -31,7 +31,7 @@ train_indices = indices[split:]
 
 # load model
 model = Model().to(device=device)
-model.load_state_dict(torch.load('model_saved.pth', 
+model.load_state_dict(torch.load('stats/model_saved.pth', 
                                  map_location=torch.device(device)))
 model = model.float()
 
