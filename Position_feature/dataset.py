@@ -3,7 +3,9 @@ import json
 import torch
 import numpy as np
 from PIL import Image
+from scipy.io import loadmat
 from torch.utils.data.dataset import Dataset
+from skimage.feature import corner_shi_tomasi
 
 
 def generate_heatmap(point_list):
@@ -18,7 +20,6 @@ def generate_heatmap(point_list):
         heatmap[:, r, c] = 1
 
     return heatmap
-
 
 def generate_feature_map(points, features):
     feature_map = np.zeros((16, 128, 128))
@@ -35,19 +36,30 @@ def generate_feature_map(points, features):
 
 
 class MyDataset(Dataset):
-    def __init__(self, root_path, transforms=None):
+    def __init__(self, root_path, transforms=None, choose_features=range(5)):
         '''
         Args:
             root_path (string): path to the root folder containing all folders
             transform: pytorch transforms for transforms and tensor conversion
+            choose_features (a list of integers): contains feature indices, 
+                                                    e.g. [0,1,2,3,4] or 
+                                                         [0,1,2] or
+                                                         [0,3]
         '''
         self.transforms = transforms
+        self.choose_features = choose_features
         # get the images list
-        self.image_list = glob.glob(root_path + '/Image/' + '*')
+        self.image_list = sorted(glob.glob(root_path + '/Image/' + '*.png'))
         # get the points list
-        self.point_list = glob.glob(root_path + '/Point_Location/' + '*')
+        self.point_list = sorted(glob.glob(root_path +
+                                          '/Point_Location/' + 
+                                          '*.json'))
         # get the features list
-        self.feature_list = glob.glob(root_path + '/Coarse_Label/' + '*')
+        self.feature_list = sorted(glob.glob(root_path +
+                                             '/Coarse_Label/' +
+                                             '*.json'))
+        # get the 4D features list
+        self.feature_4D_list = sorted(glob.glob(root_path + '/4D/' + '*.mat'))
 
         # calculate length
         self.dataset_length = len(self.image_list)
@@ -56,20 +68,33 @@ class MyDataset(Dataset):
         # get image name from the image list
         single_image_path = self.image_list[index]
         # Open image (as a PIL.Image object) & must be converted to tensor
-        # TODO: replace Image with skimage
-        with Image.open(single_image_path).convert('RGB') as img:
+        with Image.open(single_image_path).convert('L') as imggray:
+            # generate Shi-Tomasi response matrix
+            imggray_as_np = np.array(imggray)
+            response = corner_shi_tomasi(imggray_as_np)
             # convert to numpy, dim = 128x128
-            img_as_np = np.array(img) / 255
+            response_as_np = np.array(response)
             # Transform image to tensor, change data type
-            img_tensor = torch.from_numpy(img_as_np).float()
-            img_tensor = img_tensor.permute(2, 0, 1)
-        img.close()
+            response_tensor = torch.from_numpy(response_as_np).float()
+            response_tensor = response_tensor.unsqueeze(dim=0)
+        imggray.close()
+
+        # get input name from the input list
+        single_feature_4D_path = self.feature_4D_list[index]
+        # Open input (as a numpy array) & must be converted to tensor
+        feat = loadmat(single_feature_4D_path)
+        feat = feat['input_4D']
+        # Transform input np.array to tensor, change data type
+        feat_tensor = torch.from_numpy(feat).float()
+        feat_tensor = feat_tensor.permute(2, 0, 1)
+
+        input_tensor = torch.cat([feat_tensor, response_tensor], dim=0)
+        input_tensor = input_tensor[self.choose_features, :, :]
 
         # get point path from the point list
         single_point_path = self.point_list[index]
         # open the file containing point locations
         with open(single_point_path) as json_file:
-            # convert to numpy array (must be nx2)
             data = json.load(json_file)
             x_pts = np.array((data["X"]))
             y_pts = np.array((data["Y"]))
@@ -80,7 +105,7 @@ class MyDataset(Dataset):
             point_map_tensor = torch.from_numpy(point_map).float()
         json_file.close()
 
-            # get feature path from the point list
+        # get feature path from the point list
         single_feature_path = self.feature_list[index]
         # open feature values file
         with open(single_feature_path) as json_file:
@@ -91,17 +116,16 @@ class MyDataset(Dataset):
             feature_map = generate_feature_map(points, features)
             # convert to tensor, change data type
             feature_map_tensor = torch.from_numpy(feature_map).float()
-            # TODO: for labels (point_map & feature_map) int dtype might be better
         json_file.close()
 
         # Transform image to tensor
         if self.transforms:
-            img_tensor = self.transforms(img_tensor)
+            input_tensor = self.transforms(input_tensor)
             point_map_tensor = self.transforms(point_map_tensor)
             feature_map_tensor = self.transforms(feature_map_tensor)
 
         # Return image and the label
-        return {'image': img_tensor, 
+        return {'image': input_tensor,
                 'point_map': point_map_tensor,
                 'feature_map': feature_map_tensor}
 

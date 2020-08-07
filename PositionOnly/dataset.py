@@ -3,7 +3,9 @@ import json
 import torch
 import numpy as np
 from PIL import Image
+from scipy.io import loadmat
 from torch.utils.data.dataset import Dataset
+from skimage.feature import corner_shi_tomasi
 
 
 def generate_heatmap(point_list):
@@ -21,17 +23,24 @@ def generate_heatmap(point_list):
 
 
 class MyDataset(Dataset):
-    def __init__(self, root_path, transforms=None):
+    def __init__(self, root_path, transforms=None, choose_features=range(5)):
         '''
         Args:
             root_path (string): path to the root folder containing all folders
             transform: pytorch transforms for transforms and tensor conversion
+            choose_features (a list of integers): contains feature indices, 
+                                                    e.g. [0,1,2,3,4] or 
+                                                         [0,1,2] or
+                                                         [0,3]
         '''
         self.transforms = transforms
+        self.choose_features = choose_features
         # get the images list
         self.image_list = sorted(glob.glob(root_path + '/Image/' + '*.png'))
+        # get the features list
+        self.feature_list = sorted(glob.glob(root_path + '/4D/' + '*.mat'))
         # get the points list
-        self.point_list = sorted(glob.glob(root_path +
+        self.point_list = sorted(glob.glob(root_path + 
                                  '/Point_Location/' + 
                                  '*.json'))
 
@@ -43,12 +52,28 @@ class MyDataset(Dataset):
         single_image_path = self.image_list[index]
         # Open image (as a PIL.Image object) & must be converted to tensor
         with Image.open(single_image_path).convert('RGB') as img:
+            # generate Shi-Tomasi response matrix
+            imggray = img.convert('L')
+            imggray = np.array(imggray)
+            response = corner_shi_tomasi(imggray)
             # convert to numpy, dim = 128x128
-            img_as_np = np.array(img) / 255
+            response_as_np = np.array(response)
             # Transform image to tensor, change data type
-            img_tensor = torch.from_numpy(img_as_np).float()
-            img_tensor = img_tensor.permute(2, 0, 1)
+            response_tensor = torch.from_numpy(response_as_np).float()
+            response_tensor = response_tensor.unsqueeze(dim=0)
         img.close()
+
+        # get input name from the input list
+        single_feature_path = self.feature_list[index]
+        # Open input (as a numpy array) & must be converted to tensor
+        feat = loadmat(single_feature_path)
+        feat = feat['input_4D']
+        # Transform input np.array to tensor, change data type
+        feat_tensor = torch.from_numpy(feat).float()
+        feat_tensor = feat_tensor.permute(2, 0, 1)
+
+        input_tensor = torch.cat([feat_tensor, response_tensor], dim=0)
+        input_tensor = input_tensor[self.choose_features, :, :]
 
         # get point path from the point list
         single_point_path = self.point_list[index]
@@ -70,7 +95,7 @@ class MyDataset(Dataset):
             point_map_tensor = self.transforms(point_map_tensor)
 
         # Return image and the label
-        return {'image': img_tensor, 'point_map': point_map_tensor}
+        return {'image': input_tensor, 'point_map': point_map_tensor}
 
     def __len__(self):
         return self.dataset_length

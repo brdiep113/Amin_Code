@@ -5,14 +5,15 @@ This script aims at training the model
 import torch
 import torchvision
 import torch.nn as nn
+from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.io import savemat
 from torch.utils.data.sampler import SubsetRandomSampler
 from network import Model
 from dataset import MyDataset
 from torch.utils.data import DataLoader
 from utils import loss_position
-from scipy.io import savemat
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -25,7 +26,10 @@ num_epochs = 5
 # transformations = transforms.Compose([])
 
 # Define custom dataset
-my_dataset = MyDataset('.')
+# the order of input features [gray, gmag, gdir, edges, shi_tomasi response]
+choose_features = [0, 1, 2, 3, 4]
+n_features = len(choose_features)
+my_dataset = MyDataset('.', choose_features=choose_features)
 
 # Define data loader
 batch_size = 32
@@ -52,8 +56,8 @@ validation_loader = DataLoader(my_dataset, batch_size=batch_size, sampler=valid_
 
 
 # model, loss, and optimizer settings
-model = Model()
-model.to(device=device)
+model = Model(num_features=n_features)
+model = model.to(device=device)
 # print(model)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), 
@@ -64,7 +68,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999),
 model = model.float()
 loss_train = []
 loss_val = []
-latent = np.empty((1, 16, 16, 128))
+prob = np.empty((1, 128, 128))
 
 for epoch in range(num_epochs):
 
@@ -75,9 +79,6 @@ for epoch in range(num_epochs):
     epoch_loss_train = 0
 
     for i, data in enumerate(train_loader):
-
-        # Zeros the gradients of all optimized torch.Tensors
-        optimizer.zero_grad()
 
         # Load data to tensors
         img = data['image']
@@ -92,13 +93,14 @@ for epoch in range(num_epochs):
         epoch_loss_train += loss_pos.item() * img.size(0)
 
         # Zero gradients, perform a backward pass, and update the weights
+        optimizer.zero_grad()
         loss_pos.backward()
         optimizer.step()
 
-        # save featuremaps of latent space every 1 epochs
-        if epoch % 1 + i == 0: 
-            l = pred['latent'][0].permute(1, 2, 0).detach().cpu().numpy()
-            latent = np.concatenate([latent, l[np.newaxis]]) 
+        # save probs of every 5 epochs for the first image of the first batch
+        if epoch % 5 + i == 0: 
+            p = pred['prob'][0].detach().cpu().numpy()
+            prob = np.concatenate([prob, p[np.newaxis]]) 
         
         # TODO: add checkpoint model saving periodically
 
@@ -134,11 +136,11 @@ for epoch in range(num_epochs):
 # Save the model
 torch.save(model.state_dict(), 'stats/model_saved.pth')
 
-# Save latent space feature maps along with some log statistics
-latent = latent[1:,...]            # removes first, which was an torch.empty
+# Save prob along with some log statistics
+prob = prob[1:,...]            # removes first, which was an np.empty
 loss_train = np.array(loss_train)
 loss_val = np.array(loss_val)
-mdic = {'latent' : latent, 'loss_train' : loss_train, 'loss_val' : loss_val,
+mdic = {'prob' : prob, 'loss_train' : loss_train, 'loss_val' : loss_val,
         'batch_size' : batch_size, 'validation_split' : validation_split,
         'dataset_size' : dataset_size, 'random_seed' : random_seed}
 savemat("stats/log.mat", mdic)

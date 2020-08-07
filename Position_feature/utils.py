@@ -39,3 +39,23 @@ def loss_position(logits, labels):
     
     loss = torch.nn.functional.cross_entropy(logits, labels, weights)
     return loss
+
+def loss_feature(features, labels):
+    '''
+    Arguments: 
+        - features: [batch_size, 16, w, h]
+        - labels: [batch_size, 16, w, h]
+    Returns:
+        - loss: scalar
+    '''
+    _, ch, h, w = labels.size()
+	# Get average number of ones(points) for each batch to calculate weights
+    num_ones = labels.sum(dim=[1,2,3]).mean().round()
+	# Calculate weights for 1s
+    weight_pos = (ch*h*w - num_ones) / num_ones
+    weight_pos = weight_pos.to(device=device) 
+    loss = torch.nn.functional.binary_cross_entropy_with_logits(features, 
+                                                                labels,
+                                                          pos_weight=weight_pos)
+    return loss
+

@@ -10,10 +10,10 @@ import torch.nn.functional as F
 
 class Model(nn.Module):
 
-    def __init__(self):
+    def __init__(self, num_features=5):
         super(Model, self).__init__()
         # four pairs of convolution layers
-        self.conv1 = nn.Conv2d(3, 64, 3, 1, 1)
+        self.conv1 = nn.Conv2d(num_features, 64, 3, 1, 1)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(64, 64, 3, 1, 1)
         self.bn2 = nn.BatchNorm2d(64)
@@ -54,7 +54,7 @@ class Model(nn.Module):
 
         x = F.relu(self.bn7(self.conv7(x)))
         x = F.relu(self.bn8(self.conv8(x)))
-        fm = x
+
         x = F.relu(self.bn9(self.conv9(x)))
         x = self.bn10(self.conv10(x))
         
@@ -63,6 +63,4 @@ class Model(nn.Module):
         prob = self.pixel_shuffle(prob)
         prob = torch.squeeze(prob, 1)
 
-        return {'logits' : x, 'prob' : prob, 'latent' : fm}
-
-
+        return {'logits' : x, 'prob' : prob}

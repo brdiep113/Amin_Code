@@ -1,3 +1,6 @@
+'''Checks the prediction results on validation data
+   saves in valid_resuls folder '''
+
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,13 +8,17 @@ from scipy.io import savemat
 from network import Model
 from dataset import MyDataset
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Define custom dataset
-my_dataset = MyDataset('.')
+# the order of input features [gray, gmag, gdir, edges, shi_tomasi response]
+choose_features = [0, 1, 2, 3, 4]
+n_features = len(choose_features)
+my_dataset = MyDataset('.', choose_features=choose_features)
 
 # Define data loader
-validation_split = .3
+batch_size = 1
+validation_split = .1
 shuffle_dataset = True
 random_seed= 42
 
@@ -27,15 +34,14 @@ val_indices = indices[:split]
 # check if dataset load order is correct
 # for ind in val_indices:
 #     print(ind)
-#     data = my_dataset[ind]
-#     img = data['image']
+#     img, _ = my_dataset[ind]
 #     plt.figure()
 #     plt.imshow(img.permute(1,2,0))
 #     plt.show()
 
 # load model
-model = Model().to(device=device)
-model.load_state_dict(torch.load('model_saved.pth'))
+model = Model(num_features=n_features).to(device=device)
+model.load_state_dict(torch.load('stats/model_saved.pth'))
 model = model.float()
 model.eval()
 
@@ -44,15 +50,25 @@ for ind in val_indices:
     img = data['image']
     img = img.to(device=device)
     img = img.unsqueeze(dim=0)
-    position_map, feature_maps = model(img)
+    position_pred, feature_pred = model(img)
     
+    logits_pos = position_pred['logits']
+    position_map = position_pred['prob']
+
+    logits_feat = feature_pred['logits']
+    feature_map = feature_pred['features']
+
+    logits_pos = logits_pos.squeeze().permute(1, 2, 0)      # must be (16,16,65)
+    logits_pos = logits_pos.detach().cpu().numpy()
     position_map = position_map.squeeze()           # must be (128,128)
-    feature_maps = feature_maps.squeeze()           # should be (16,128,128)
-    feature_maps = feature_maps.permute(1,2,0)      # should be (128,128,16)
-
     position_map = position_map.detach().cpu().numpy()
-    feature_maps = feature_maps.detach().cpu().numpy()
 
-    mdic = {'position_map': position_map, 'feature_maps': feature_maps}
-    savemat(f"results/%.06d.mat"%(ind), mdic)
+    logits_feat = logits_feat.squeeze().permute(1, 2, 0)  # must be (128,128,16)
+    logits_feat = logits_feat.detach().cpu().numpy()
+    feature_map = feature_map.squeeze().permute(1, 2, 0)  # must be (128,128,16)
+    feature_map = feature_map.detach().cpu().numpy()
+        
+    mdic = {'logits_pos' : logits_pos, 'position_map': position_map,
+            'logits_feat' : logits_feat, 'feature_map': feature_map}
+    savemat(f"valid_results/%.06d.mat"%(ind), mdic)
 

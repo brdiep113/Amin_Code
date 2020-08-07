@@ -11,7 +11,10 @@ from dataset import MyDataset
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Define custom dataset
-my_dataset = MyDataset('.')
+# the order of input features [gray, gmag, gdir, edges, shi_tomasi response]
+choose_features = [0, 1, 2, 3, 4]
+n_features = len(choose_features)
+my_dataset = MyDataset('.', choose_features=choose_features)
 
 # Define data loader
 batch_size = 1
@@ -37,7 +40,7 @@ val_indices = indices[:split]
 #     plt.show()
 
 # load model
-model = Model().to(device=device)
+model = Model(num_features=n_features).to(device=device)
 model.load_state_dict(torch.load('stats/model_saved.pth'))
 model = model.float()
 model.eval()
