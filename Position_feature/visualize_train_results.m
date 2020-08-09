@@ -5,12 +5,21 @@ clc
 clear
 
 % set the name of the results
-num_result = 11;
+num = 11;
 
 % read image
-im = imread(['datasets/TrainingValidation/Image/', num2str(num_result,'%06.f') ,'.png']);
+im = imread(['datasets/TrainingValidation/Image/', num2str(num,'%06.f') ,'.png']);
 % read results in mat files (predicted points)
-load(['results/train', num2str(num_result,'%06.f') ,'.mat']);
+load(['results/train', num2str(num,'%06.f') ,'.mat']);
+
+% read json files (target points and their label)
+fname = ['datasets/TrainingValidation/Point_Location/', num2str(num, '%06.f'),'.json'];
+val = jsondecode(fileread(fname));
+target_points = [size(im,1)-val.Y, val.X];
+
+fname = ['datasets/TrainingValidation/Coarse_Label/', num2str(num, '%06.f'),'.json'];
+val = jsondecode(fileread(fname));
+target_labels = val;
 
 %  postition
 p = position_map > 0.5; % for now, cause the results are not limited to 0|1
@@ -46,3 +55,28 @@ for i=1:size(points,1)
               'r','FaceAlpha',.5)
     end
 end
+
+%% Accuracy
+% position
+p = single(p);
+id = sub2ind([128, 128],round(target_points(:,1)), round(target_points(:,2)));
+target_p = zeros(128);
+target_p(id)=1;
+
+[acc_total_position] = accuracy(p,target_p);
+
+% feature
+f = zeros(size(feature_map));
+for k = 1:length(r)
+    f(r(k), c(k), :) = feature_map(r(k), c(k), :);
+end
+f = single(f > 0.5);
+target_f = zeros(128,128,16);
+r_t = round(target_points(:,1));
+c_t = round(target_points(:,2));
+for k = 1:length(r_t)
+    target_f(r_t(k), c_t(k), :) = target_labels(k, :);
+end
+
+[acc_total_feature] = accuracy(f,target_f);
+table(acc_total_position, acc_total_feature)
