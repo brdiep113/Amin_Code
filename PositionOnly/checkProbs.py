@@ -15,7 +15,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # the order of input features [gray, gmag, gdir, edges, shi_tomasi response]
 choose_features = [0, 1, 2, 3, 4]
 n_features = len(choose_features)
-my_dataset = MyDataset('.', choose_features=choose_features)
+my_dataset = MyDataset('datasets/TrainingValidation', 
+                       choose_features=choose_features)
 
 # Define data loader
 batch_size = 1
@@ -66,5 +67,5 @@ for ind in train_indices:
     position_map = position_map.detach().cpu().numpy()
     
     mdic = {'target' : target,'logits' : logits, 'position_map': position_map}
-    savemat(f"train_results/%.06d.mat"%(ind), mdic)
+    savemat(f"results/train/%.06d.mat"%(ind), mdic)
 

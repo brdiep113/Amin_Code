@@ -29,7 +29,8 @@ num_epochs = 5
 # the order of input features [gray, gmag, gdir, edges, shi_tomasi response]
 choose_features = [0, 1, 2, 3, 4]
 n_features = len(choose_features)
-my_dataset = MyDataset('.', choose_features=choose_features)
+my_dataset = MyDataset('datasets/TrainingValidation',
+                       choose_features=choose_features)
 
 # Define data loader
 batch_size = 32

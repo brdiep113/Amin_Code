@@ -8,9 +8,9 @@ clear
 num_result = 21;
 
 % read image
-im = imread(['Image/', num2str(num_result,'%06.f') ,'.png']);
+im = imread(['datasets/TrainingValidation/Image/', num2str(num_result,'%06.f') ,'.png']);
 % read results in mat files (predicted points)
-load(['valid_results/', num2str(num_result,'%06.f') ,'.mat']);
+load(['results/validation/', num2str(num_result,'%06.f') ,'.mat']);
 
 %  postition
 p = position_map > 0.5; % for now, cause the results are not limited to 0|1
@@ -24,7 +24,7 @@ for k = 1:length(r)
     pred_labels(k,:) = feature_map(r(k), c(k), :);
 end
 
-pred_labels = single(pred_labels > 0.99); % for now
+pred_labels = single(pred_labels > 0.5); % for now
 %% visualization
 figure
 imshow(im)

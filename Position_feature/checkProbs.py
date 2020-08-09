@@ -15,15 +15,17 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # the order of input features [gray, gmag, gdir, edges, shi_tomasi response]
 choose_features = [0, 1, 2, 3, 4]
 n_features = len(choose_features)
-my_dataset = MyDataset('.', choose_features=choose_features)
+my_dataset = MyDataset('datasets/TrainingValidation', 
+                       choose_features=choose_features)
 
-# Define data loader
+# Setting some parameters
 alpha = 0.1
 batch_size = 1
 validation_split = .1
 shuffle_dataset = True
 random_seed= 42
 
+# Define data loader
 # Creating data indices for training and validation splits:
 dataset_size = len(my_dataset)
 indices = list(range(dataset_size))
@@ -81,5 +83,5 @@ for ind in train_indices:
     mdic = {'target_pos' : target_pos, 'target_feat' : target_feat, 
             'position_map': position_map, 'feature_map' : feature_map,
             'logits_pos' : logits_pos, 'logits_feat' : logits_feat}
-    savemat(f"train_results/%.06d.mat"%(ind), mdic)
+    savemat(f"results/train/%.06d.mat"%(ind), mdic)
 

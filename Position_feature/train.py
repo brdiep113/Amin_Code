@@ -28,14 +28,16 @@ alpha = 0.1
 # the order of input features [gray, gmag, gdir, edges, shi_tomasi response]
 choose_features = [0, 1, 2, 3, 4]
 n_features = len(choose_features)
-my_dataset = MyDataset('.', choose_features=choose_features)
+my_dataset = MyDataset('datasets/TrainingValidation', 
+                       choose_features=choose_features)
 
-# Define data loader
+# Setting some paramters
 batch_size = 32
 validation_split = .1
 shuffle_dataset = True
 random_seed = 42
 
+# Define data loader
 # Creating data indices for training and validation splits:
 dataset_size = len(my_dataset)
 indices = list(range(dataset_size))
