@@ -5,8 +5,8 @@ clc
 clear
 
 % set the name of the results
-num = 21;
-
+num = 53;
+radius = 3;
 % read image
 im = imread(['datasets/TrainingValidation/Image/', num2str(num,'%06.f') ,'.png']);
 % read results in mat files (predicted points)
@@ -40,7 +40,6 @@ imshow(im)
 hold on
 plot(points(:,1), points(:,2), 'y*')
 
-
 pred_angles = pred_labels .* linspace(22.5,360,16);
 
 for i=1:size(points,1)
@@ -58,25 +57,10 @@ end
 
 %% Accuracy
 % position
-p = single(p);
-id = sub2ind([128, 128],round(target_points(:,1)), round(target_points(:,2)));
-target_p = zeros(128);
-target_p(id)=1;
-
-[acc_total_position] = accuracy(p,target_p);
+acc_point = point_accuracy(points(:,[2,1]),target_points,radius);
 
 % feature
-f = zeros(size(feature_map));
-for k = 1:length(r)
-    f(r(k), c(k), :) = feature_map(r(k), c(k), :);
-end
-f = single(f > 0.5);
-target_f = zeros(128,128,16);
-r_t = round(target_points(:,1));
-c_t = round(target_points(:,2));
-for k = 1:length(r_t)
-    target_f(r_t(k), c_t(k), :) = target_labels(k, :);
-end
+idx = rangesearch(points(:,[2,1]), target_points, radius);
+acc_region = region_accuracy(pred_labels, target_labels, idx);
 
-[acc_total_feature] = accuracy(f,target_f);
-table(acc_total_position, acc_total_feature)
+table(acc_point, acc_region)

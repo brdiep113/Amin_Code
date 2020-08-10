@@ -6,7 +6,7 @@ clear
 
 % set the name of the results
 num_result = 18;
-
+radius = 3;
 % read image
 im = imread(['datasets/Test/Image/', num2str(num_result,'%06.f') ,'.png']);
 % read results in mat files (predicted points)
@@ -29,10 +29,5 @@ hold on
 plot(points(:,2), points(:,1), 'y*')
 %% Accuracy
 % position
-p = single(p);
-id = sub2ind([128, 128],round(target_points(:,1)), round(target_points(:,2)));
-target_p = zeros(128);
-target_p(id)=1;
-
-[acc_total_position] = accuracy(p,target_p);
-table(acc_total_position)
+acc_point = point_accuracy(points(:,[2,1]),target_points,radius);
+table(acc_point)
